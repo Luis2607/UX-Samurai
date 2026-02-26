@@ -1,0 +1,118 @@
+﻿@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Yuji+Syuku&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Yuji Syuku", serif;
+  
+  --color-brand-red: #ff3b30;
+  --color-brand-cream: #f5f2ed;
+  --color-brand-ink: #1a1a1a;
+}
+
+@layer base {
+  body {
+    @apply bg-brand-cream text-brand-ink font-sans antialiased overflow-x-hidden;
+  }
+  
+  h1, h2, h3 {
+    @apply font-display tracking-normal;
+  }
+
+  /* Respect reduced motion preference */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* === BUTTONS === */
+.samurai-button {
+  @apply relative overflow-hidden bg-brand-red text-white font-bold py-4 px-8 rounded-lg transition-all duration-200 hover:brightness-110 hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.98] text-center inline-flex items-center justify-center cursor-pointer;
+}
+
+/* === CARDS === */
+.samurai-card {
+  @apply bg-white p-6 rounded-2xl shadow-sm border border-black/5 transition-all duration-200 hover:-translate-y-1 hover:shadow-xl h-full cursor-pointer;
+}
+
+/* === FORM ELEMENTS === */
+.input-field {
+  @apply w-full bg-white border border-black/10 rounded-lg p-4 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-brand-red/50 focus:border-brand-red;
+}
+
+.label-float {
+  @apply block text-xs font-semibold uppercase tracking-wider text-black/50 mb-1 ml-1;
+}
+
+/* === PATTERNS === */
+.samurai-grid-pattern {
+  background-image: radial-gradient(circle, #ff3b30 1px, transparent 1px);
+  background-size: 24px 24px;
+  opacity: 0.05;
+}
+
+.vertical-text {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+}
+
+/* === FOCUS STATES (Adaptive for light/dark sections) === */
+.focus-ring {
+  @apply focus:outline-none focus:ring-2 focus:ring-brand-red focus:ring-offset-2 transition-all;
+}
+
+.focus-ring-dark {
+  @apply focus:outline-none focus:ring-2 focus:ring-brand-red focus:ring-offset-2 focus:ring-offset-brand-ink transition-all;
+}
+
+/* === LAYOUT UTILITIES === */
+.section-container {
+  @apply max-w-7xl mx-auto px-6 py-24;
+}
+
+.heading-lg {
+  @apply text-4xl md:text-6xl lg:text-7xl leading-[1.1] mb-8;
+}
+
+.heading-md {
+  @apply text-3xl md:text-5xl mb-6;
+}
+
+.text-body {
+  @apply text-lg md:text-xl text-black/70 leading-relaxed;
+}
+
+/* === SCROLL BEHAVIOR === */
+html {
+  scroll-behavior: smooth;
+}
+
+/* === SELECTION === */
+::selection {
+  background-color: #ff3b30;
+  color: white;
+}
+
+/* === GLASSMORPHISM NAV === */
+.nav-glass-light {
+  background: rgba(245, 242, 237, 0.65);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  box-shadow:
+    0 4px 30px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.nav-glass-dark {
+  background: rgba(26, 26, 26, 0.55);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  box-shadow:
+    0 4px 30px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
