@@ -95,7 +95,7 @@
 }
 
 .text-body {
-  @apply text-lg md:text-xl text-black/70 leading-relaxed;
+  @apply text-lg md:text-xl text-neutral-700 leading-relaxed;
 }
 
 /* === SCROLL BEHAVIOR === */
@@ -246,4 +246,74 @@ html {
   .social-proof-text {
     font-size: 0.65rem;
   }
+}
+\n
+/* === UX SAMURAI KINETICS (TAILWIND V4 READY) === */
+
+.shimmer-effect {
+  position: relative;
+  overflow: hidden;
+}
+
+.shimmer-effect::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.4) 50%,
+    transparent 100%
+  );
+  transform: skewX(-15deg);
+  animation: shimmer 3s infinite;
+  pointer-events: none;
+}
+
+@keyframes shimmer {
+  0% { left: -100%; }
+  20% { left: 200%; }
+  100% { left: 200%; }
+}
+
+.highlighter-text {
+  background-image: linear-gradient(to right, transparent 50%, #ff3b30 50%);
+  background-size: 200% 10% !important;
+  background-repeat: no-repeat !important;
+  background-position: left bottom !important;
+  transition: background-position 1s cubic-bezier(0.22, 1, 0.36, 1) !important;
+}
+
+.highlighter-text.in-view {
+  background-position: right bottom !important;
+}
+
+.parallax-image {
+  transform: scale(1);
+  transition: transform 10s cubic-bezier(0.1, 0, 0.1, 1), opacity 0.5s ease;
+}
+
+.group:hover .parallax-image {
+  transform: scale(1.08);
+}
+
+.marquee-container:hover > div {
+  animation-play-state: paused !important;
+}
+
+.input-field-kinetic {
+  transition: border-color 0.3s ease, transform 0.1s ease;
+}
+
+.label-float-kinetic {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.input-field-kinetic:focus + .label-float-kinetic,
+.input-field-kinetic:not(:placeholder-shown) + .label-float-kinetic {
+  transform: translateY(-24px) scale(0.85);
+  color: #ff3b30;
 }

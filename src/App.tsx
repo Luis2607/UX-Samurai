@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect, useRef } from "react";
-import { motion } from "motion/react";
+import { motion, AnimatePresence, useInView } from "motion/react";
 import {
   CheckCircle2,
   ChevronRight,
@@ -21,6 +21,8 @@ import {
   Rocket,
   RefreshCw,
   ArrowRight,
+  Plus,
+  Minus,
   Package,
   Instagram,
   Linkedin,
@@ -28,6 +30,7 @@ import {
   Twitter,
   Menu,
   X,
+  Mail,
 } from "lucide-react";
 
 import { TestimonialsColumn } from "./components/ui/testimonials-columns-1";
@@ -129,50 +132,45 @@ export default function App() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
   const [activePhase, setActivePhase] = useState(0);
-  const [formState, setFormState] = useState<"idle" | "loading" | "success">(
-    "idle",
-  );
+  const [formState, setFormState] = useState<"idle" | "loading" | "success">("idle");
+  const [selectedLevel, setSelectedLevel] = useState("");
+  const [selectedChallenge, setSelectedChallenge] = useState("");
   const [isOnDark, setIsOnDark] = useState(false);
   const navRef = useRef<HTMLElement>(null);
+  const insightRef = useRef(null);
+  const isInsightInView = useInView(insightRef, { once: true, amount: 0.5 });
+  const statsRef = useRef(null);
+  const isStatsInView = useInView(statsRef, { once: true, amount: 0.5 });
+  const [isScrolledDown, setIsScrolledDown] = useState(false);
+  const [isScrolledPastHero, setIsScrolledPastHero] = useState(false);
+  const lastScrollY = useRef(0);
 
-  // Detect if header overlaps a dark section
+  // High-End Header Performance: Hide on scroll down, show on scroll up (Glassmorphism Floating)
   useEffect(() => {
-    const checkBackground = () => {
-      if (!navRef.current) return;
-      const navRect = navRef.current.getBoundingClientRect();
-      const navMidY = navRect.top + navRect.height / 2;
-      const navMidX = navRect.left + navRect.width / 2;
-      const prevVis = navRef.current.style.visibility;
-      navRef.current.style.visibility = "hidden";
-      const el = document.elementFromPoint(navMidX, navMidY);
-      navRef.current.style.visibility = prevVis;
-      if (el) {
-        let current: Element | null = el;
-        let dark = false;
-        while (current && current !== document.body) {
-          const bg = window.getComputedStyle(current).backgroundColor;
-          if (bg && bg !== "rgba(0, 0, 0, 0)" && bg !== "transparent") {
-            const match = bg.match(/\\d+/g);
-            if (match) {
-              const [r, g, b] = match.map(Number);
-              const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-              if (luminance < 0.3) dark = true;
-              break;
-            }
-          }
-          current = current.parentElement;
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      
+      // Add a threshold before hiding the header
+      if (currentScrollY > 100) {
+        if (currentScrollY > lastScrollY.current && !isScrolledDown) {
+          setIsScrolledDown(true); // Scrolling down - Hide
+        } else if (currentScrollY < lastScrollY.current && isScrolledDown) {
+          setIsScrolledDown(false); // Scrolling up - Show
         }
-        setIsOnDark(dark);
+      } else {
+        setIsScrolledDown(false); // Always show at top
       }
+      
+      setIsScrolledPastHero(currentScrollY > 600);
+      
+      // Throttle
+      lastScrollY.current = currentScrollY;
     };
-    checkBackground();
-    window.addEventListener("scroll", checkBackground, { passive: true });
-    window.addEventListener("resize", checkBackground, { passive: true });
-    return () => {
-      window.removeEventListener("scroll", checkBackground);
-      window.removeEventListener("resize", checkBackground);
-    };
-  }, []);
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [isScrolledDown]);
+
 
   const toggleFaq = (index: number) => {
     setOpenFaqIndex(openFaqIndex === index ? null : index);
@@ -186,74 +184,70 @@ export default function App() {
   return (
     <div className="min-h-screen selection:bg-brand-red selection:text-white overflow-x-hidden">
       <header>
-        {/* Navigation */}
-        <div className="fixed top-4 left-0 right-0 z-50 flex justify-center px-4">
+        {/* Navigation - Edge to Edge Spatial UI */}
+        <div className="fixed top-0 left-0 right-0 z-50 flex justify-center">
           <nav
-            ref={navRef}
-            className={`w-full max-w-7xl rounded-2xl shadow-lg border transition-all duration-500 ${
-              isOnDark
-                ? "nav-glass-dark border-white/10 text-white"
-                : "nav-glass-light border-black/5 text-brand-ink"
+            className={`w-full border-b transition-all duration-500 nav-glass-light border-black/5 text-brand-ink ${
+              isScrolledDown ? "translate-y-[-100%] opacity-0" : "translate-y-0 opacity-100"
             }`}
             aria-label="Navegação principal"
           >
-            <div className="px-6 py-3 flex justify-between items-center">
+            <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center transition-all duration-500" style={{ minHeight: isScrolledPastHero ? '72px' : '88px' }}>
+              
+              {/* Logo + Wordmark */}
               <div className="flex items-center gap-3">
                 <img
                   src="/images/ux-samurai-logo.png"
                   alt="UX Samurai Logo"
-                  className="h-9 w-auto transition-all duration-500"
-                  style={{
-                    filter: isOnDark
-                      ? "brightness(0) invert(1)"
-                      : "brightness(0)",
-                  }}
+                  className={`w-auto transition-all duration-500 drop-shadow-sm ${isScrolledPastHero ? 'h-8' : 'h-10'}`}
+                  style={{ filter: "brightness(0)" }}
                 />
                 <span
-                  className={`font-display text-lg tracking-wide select-none transition-colors duration-500 ${
-                    isOnDark ? "text-white" : "text-brand-ink"
-                  }`}
+                  className="font-sans font-bold text-lg tracking-widest select-none text-brand-ink uppercase"
                 >
-                  UX Samurai
+                  UX <span className="text-brand-red">SAMURAI</span>
                 </span>
               </div>
 
-              <div className="hidden md:flex items-center gap-8 font-medium text-sm uppercase tracking-widest">
+              {/* Magnetic Links & Conditional CTA */}
+              <div className="hidden md:flex items-center gap-8 text-sm">
                 <a
                   href="#"
-                  className={`hover:text-brand-red transition-colors duration-200 focus-ring rounded-sm cursor-pointer ${
-                    isOnDark ? "text-white/80" : ""
-                  }`}
+                  className="relative group font-semibold text-brand-ink/80 transition-colors duration-200"
                 >
                   Home
+                  <span className="absolute -bottom-1 left-1/2 w-0 h-0.5 bg-brand-red transition-all duration-300 group-hover:w-full group-hover:left-0" />
                 </a>
                 <a
                   href="#about"
-                  className={`hover:text-brand-red transition-colors duration-200 focus-ring rounded-sm cursor-pointer ${
-                    isOnDark ? "text-white/80" : ""
-                  }`}
+                  className="relative group font-semibold text-brand-ink/80 transition-colors duration-200"
                 >
                   Sobre
+                  <span className="absolute -bottom-1 left-1/2 w-0 h-0.5 bg-brand-red transition-all duration-300 group-hover:w-full group-hover:left-0" />
                 </a>
                 <a
                   href="#process"
-                  className={`hover:text-brand-red transition-colors duration-200 focus-ring rounded-sm cursor-pointer ${
-                    isOnDark ? "text-white/80" : ""
-                  }`}
+                  className="relative group font-semibold text-brand-ink/80 transition-colors duration-200"
                 >
                   Processo
+                  <span className="absolute -bottom-1 left-1/2 w-0 h-0.5 bg-brand-red transition-all duration-300 group-hover:w-full group-hover:left-0" />
                 </a>
-                <button
-                  onClick={scrollToForm}
-                  className="samurai-button py-2 px-6 text-xs focus-ring cursor-pointer"
-                  aria-label="Aplicar para a sessão estratégica"
-                >
-                  Aplicar Agora
-                </button>
+                
+                {/* Delayed CTA - Only shows when deep scrolling */}
+                <div className={`overflow-hidden transition-all duration-500 origin-right ${isScrolledPastHero ? 'max-w-[200px] opacity-100 ml-4' : 'max-w-0 opacity-0 ml-0 pointer-events-none'}`}>
+                  <button
+                    onClick={scrollToForm}
+                    className="samurai-button py-2.5 px-6 text-xs whitespace-nowrap"
+                    aria-label="Aplicar para a sessão estratégica"
+                  >
+                    APLICAR AGORA
+                  </button>
+                </div>
               </div>
 
+              {/* Mobile Menu Toggle */}
               <button
-                className="md:hidden p-2 focus-ring rounded-lg cursor-pointer"
+                className="md:hidden p-2 focus-ring rounded-lg cursor-pointer text-brand-ink"
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
                 aria-expanded={isMenuOpen}
                 aria-label={isMenuOpen ? "Fechar menu" : "Abrir menu"}
@@ -264,32 +258,32 @@ export default function App() {
           </nav>
         </div>
 
-        {/* Mobile Menu */}
+        {/* Mobile Menu Overlay */}
         {isMenuOpen && (
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="fixed inset-0 z-40 bg-brand-cream pt-24 px-6 md:hidden"
+            className="fixed inset-0 z-40 pt-24 px-6 bg-brand-cream/95 backdrop-blur-xl md:hidden"
           >
-            <div className="flex flex-col gap-6 text-center text-xl font-display">
+            <div className="flex flex-col gap-8 text-xl font-display">
               <a
                 href="#"
                 onClick={() => setIsMenuOpen(false)}
-                className="focus-ring rounded-lg"
+                className="border-b border-black/5 pb-4"
               >
                 Home
               </a>
               <a
                 href="#about"
                 onClick={() => setIsMenuOpen(false)}
-                className="focus-ring rounded-lg"
+                className="border-b border-black/5 pb-4"
               >
                 Sobre
               </a>
               <a
                 href="#process"
                 onClick={() => setIsMenuOpen(false)}
-                className="focus-ring rounded-lg"
+                className="border-b border-black/5 pb-4"
               >
                 Processo
               </a>
@@ -298,9 +292,9 @@ export default function App() {
                   setIsMenuOpen(false);
                   scrollToForm();
                 }}
-                className="samurai-button focus-ring"
+                className="samurai-button w-full mt-4"
               >
-                Aplicar Agora
+                APLICAR AGORA
               </button>
             </div>
           </motion.div>
@@ -366,7 +360,7 @@ export default function App() {
                 className="text-3xl md:text-5xl lg:text-[3.5rem] xl:text-6xl font-display leading-[1.1] mb-8"
                 style={{ textShadow: "0 1px 8px rgba(245,242,237,0.8)" }}
               >
-                DOMINE O MERCADO E ESCALE SUA CARREIRA COMO{" "}
+                ALCANCE O TOPO DO MERCADO COMO{" "}
                 <span className="text-brand-red">PRODUCT DESIGNER ELITE.</span>
               </h1>
 
@@ -375,9 +369,7 @@ export default function App() {
                 className="text-base md:text-lg text-brand-ink/65 mb-10 max-w-3xl mx-auto leading-relaxed font-sans"
                 style={{ textShadow: "0 1px 6px rgba(245,242,237,0.9)" }}
               >
-                Pare de aceitar a estagnação. Desbloqueie sua próxima promoção
-                ou transição internacional com uma mentoria estratégica
-                desenhada para quem busca o topo.
+                Supere a estagnação. Conquiste sua próxima promoção<br className="hidden md:block" />                ou vaga internacional com uma mentoria estratégica desenhada para quem busca o topo.
               </p>
 
               {/* CTA Button */}
@@ -385,7 +377,7 @@ export default function App() {
                 onClick={scrollToForm}
                 className="samurai-button text-base group px-8 py-4"
               >
-                RESERVAR SESSÃO ESTRATÉGICA
+                APLICAR AGORA
                 <ChevronRight className="inline-block ml-2 group-hover:translate-x-1 transition-transform" />
               </button>
 
@@ -423,7 +415,7 @@ export default function App() {
         <section className="py-24 px-6">
           <div className="max-w-7xl mx-auto">
             <motion.div {...fadeInUp} className="text-center mb-16">
-              <span className="text-brand-red font-display text-sm uppercase tracking-[0.3em] mb-4 block">
+              <span className="text-brand-red font-sans font-bold text-xs uppercase tracking-widest mb-4 block">
                 O Perfil
               </span>
               <h2 className="text-3xl md:text-5xl mb-6 uppercase">
@@ -458,8 +450,8 @@ export default function App() {
                   {...fadeInUp}
                   className="flex flex-col items-center text-center"
                 >
-                  <div className="w-16 h-16 bg-brand-red/10 rounded-full flex items-center justify-center mb-6">
-                    <CheckCircle2 className="text-brand-red" size={32} />
+                  <div className="w-16 h-16 bg-brand-red/10 rounded-full flex items-center justify-center mb-6 transition-colors duration-300 group-hover:bg-brand-red/20">
+                    <CheckCircle2 className="text-brand-red transition-transform duration-300 group-hover:rotate-6 group-hover:scale-110" size={32} />
                   </div>
                   <h3 className="text-2xl mb-2 font-sans font-bold">
                     {item.title}
@@ -467,7 +459,7 @@ export default function App() {
                   <p className="font-bold text-brand-red mb-4 text-sm uppercase tracking-wider">
                     {item.subtitle}
                   </p>
-                  <p className="text-black/60">{item.desc}</p>
+                  <p className="text-neutral-600">{item.desc}</p>
                 </motion.div>
               ))}
             </div>
@@ -477,7 +469,7 @@ export default function App() {
                 onClick={scrollToForm}
                 className="samurai-button px-12 cursor-pointer"
               >
-                É EXATAMENTE O QUE PRECISO. QUERO APLICAR AGORA!
+                APLICAR AGORA
               </button>
             </div>
           </div>
@@ -487,7 +479,7 @@ export default function App() {
         <section className="relative h-[60vh] flex items-center justify-center overflow-hidden">
           <div className="absolute inset-0 z-0">
             <img
-              src="https://picsum.photos/seed/lantern/1920/1080"
+              src="https://images.unsplash.com/photo-1620121692029-d088224ddc74?q=80&w=1920&auto=format&fit=crop"
               alt="Lanterna japonesa decorativa"
               loading="lazy"
               className="w-full h-full object-cover brightness-50"
@@ -501,7 +493,7 @@ export default function App() {
               className="text-4xl md:text-6xl text-white max-w-4xl leading-tight"
             >
               BASTA UM{" "}
-              <span className="underline decoration-brand-red underline-offset-8">
+              <span ref={insightRef} className={`text-brand-red transition-all duration-1000 ${isInsightInView ? "highlighter-text in-view" : "highlighter-text"}`}>
                 INSIGHT
               </span>{" "}
               PARA MUDAR TOTALMENTE O RUMO DE SUA CARREIRA
@@ -513,13 +505,13 @@ export default function App() {
         <section className="py-24 px-6 bg-white">
           <div className="max-w-7xl mx-auto">
             <motion.div {...fadeInUp} className="text-center mb-16">
-              <span className="text-brand-red font-display text-sm uppercase tracking-[0.3em] mb-4 block">
+              <span className="text-brand-red font-sans font-bold text-xs uppercase tracking-widest mb-4 block">
                 A Entrega
               </span>
               <h2 className="text-3xl md:text-5xl mb-6">
                 TRANSFORMAÇÃO EM 45 MINUTOS
               </h2>
-              <p className="text-black/50 uppercase tracking-[0.2em] text-sm font-bold">
+              <p className="text-neutral-500 uppercase tracking-[0.2em] text-sm font-bold">
                 O que você leva dessa imersão estratégica
               </p>
               <div className="w-24 h-1 bg-brand-red mx-auto mt-6" />
@@ -536,26 +528,26 @@ export default function App() {
                 {
                   title: "Arquitetura de Remuneração",
                   desc: "Estratégias de negociação e posicionamento para saltar de faixa salarial e atrair propostas de alto valor.",
-                  icon: <BarChart3 className="text-brand-red" size={32} />,
+                  icon: <BarChart3 className="text-brand-red transition-transform duration-300 group-hover:rotate-6 group-hover:scale-110" size={32} />,
                   img: "/images/img2.jpg",
                 },
                 {
                   title: "Blindagem de Carreira",
                   desc: "Como se tornar indispensável em cenários de incerteza, transformando senioridade técnica em autoridade de negócio.",
-                  icon: <CheckCircle2 className="text-brand-red" size={32} />,
+                  icon: <CheckCircle2 className="text-brand-red transition-transform duration-300 group-hover:rotate-6 group-hover:scale-110" size={32} />,
                   img: "/images/img1.jpg",
                 },
                 {
                   title: "Roadmap de Autoridade",
                   desc: "Um plano tático de 12 meses para consolidar sua marca pessoal e ser disputado pelas melhores empresas do mundo.",
-                  icon: <Map className="text-brand-red" size={32} />,
+                  icon: <Map className="text-brand-red transition-transform duration-300 group-hover:rotate-6 group-hover:scale-110" size={32} />,
                   img: "/images/img3.jpg",
                 },
               ].map((item, idx) => (
                 <motion.div
                   key={idx}
                   variants={fadeInUp}
-                  className="samurai-card group"
+                  className="samurai-card group transition-all duration-500 hover:-translate-y-2"
                 >
                   <div className="rounded-xl overflow-hidden mb-6 aspect-[4/3]">
                     <img
@@ -569,7 +561,7 @@ export default function App() {
                   <h3 className="text-xl mb-4 font-sans font-bold">
                     {item.title}
                   </h3>
-                  <p className="text-black/60 leading-relaxed">{item.desc}</p>
+                  <p className="text-neutral-600 leading-relaxed">{item.desc}</p>
                 </motion.div>
               ))}
             </motion.div>
@@ -578,7 +570,7 @@ export default function App() {
               {...fadeInUp}
               className="mt-20 text-center max-w-3xl mx-auto"
             >
-              <p className="text-lg mb-8 italic text-black/70">
+              <p className="text-lg mb-8 italic text-neutral-700">
                 "A maioria dos designers espera a oportunidade chegar. Os
                 samurais do design criam o seu próprio caminho. Se você busca o
                 topo, sua evolução começa agora."
@@ -587,7 +579,7 @@ export default function App() {
                 onClick={scrollToForm}
                 className="samurai-button px-12 cursor-pointer"
               >
-                SOLICITAR MINHA VAGA NA SESSÃO ESTRATÉGICA
+                APLICAR AGORA
               </button>
             </motion.div>
           </div>
@@ -653,7 +645,7 @@ export default function App() {
                       key={i}
                       href={social.href}
                       aria-label={social.label}
-                      className="w-10 h-10 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center hover:bg-brand-red hover:text-white transition-all duration-200 focus-ring cursor-pointer"
+                      className="w-10 h-10 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center hover:bg-brand-red hover:text-white transition-all duration-300 hover:-translate-y-2 hover:rotate-6 shadow-sm hover:shadow-brand-red/40 duration-300 hover:-translate-y-2 hover:rotate-6 shadow-sm hover:shadow-brand-red/40 duration-200 focus-ring cursor-pointer"
                     >
                       {social.icon}
                     </a>
@@ -664,7 +656,7 @@ export default function App() {
               {/* Content Column */}
               <motion.div {...fadeInUp} className="lg:col-span-7">
                 <header className="mb-12">
-                  <span className="text-brand-red font-display text-sm uppercase tracking-[0.3em] mb-4 block">
+                  <span className="text-brand-red font-sans font-bold text-xs uppercase tracking-widest mb-4 block">
                     O Mentor
                   </span>
                   <h2
@@ -802,7 +794,7 @@ export default function App() {
 
           <div className="max-w-7xl mx-auto relative z-10">
             <motion.div {...fadeInUp} className="mb-16">
-              <span className="text-brand-red font-display text-sm uppercase tracking-[0.3em] mb-4 block">
+              <span className="text-brand-red font-sans font-bold text-xs uppercase tracking-widest mb-4 block">
                 Metodologia IAM
               </span>
               <h2
@@ -1040,7 +1032,7 @@ export default function App() {
                 </div>
 
                 {/* Right Column: Deliverables */}
-                <div className="bg-white/5 rounded-2xl p-6 border border-white/5">
+                <div className="bg-white/5 rounded-2xl p-6 border border-white/5 h-fit">
                   <div className="flex items-center gap-2 text-emerald-400 font-bold text-xs uppercase tracking-widest mb-6">
                     <Package size={14} />
                     Entregáveis:
@@ -1114,7 +1106,7 @@ export default function App() {
         <section id="process" className="py-24 px-6 bg-brand-ink text-white">
           <div className="max-w-7xl mx-auto">
             <motion.div {...fadeInUp} className="text-center mb-16">
-              <span className="text-brand-red font-display text-sm uppercase tracking-[0.3em] mb-4 block">
+              <span className="text-brand-red font-sans font-bold text-xs uppercase tracking-widest mb-4 block">
                 O Método
               </span>
               <h2 className="text-3xl md:text-5xl mb-6">
@@ -1129,19 +1121,19 @@ export default function App() {
                   step: "Etapa 1",
                   title: "Agendamento",
                   desc: "Preencha o formulário de aplicação. Iremos avaliar suas respostas e em até 24h entraremos em contato.",
-                  img: "https://picsum.photos/seed/step1/600/400",
+                  img: "https://images.unsplash.com/photo-1581291518633-83b4ebd1d83e?q=80&w=600&auto=format&fit=crop",
                 },
                 {
                   step: "Etapa 2",
                   title: "Análise da Trajetória",
                   desc: "Vamos entender o seu momento e avaliar quais oportunidades podem ser exploradas para destravar o seu potencial.",
-                  img: "https://picsum.photos/seed/step2/600/400",
+                  img: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=600&auto=format&fit=crop",
                 },
                 {
                   step: "Etapa 3",
                   title: "Seu Plano de Ação",
                   desc: "Vamos discutir um Plano de Ação, que poderá ser aplicado imediatamente para trazer resultados rápidos.",
-                  img: "https://picsum.photos/seed/step3/600/400",
+                  img: "https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=600&auto=format&fit=crop",
                 },
               ].map((item, idx) => (
                 <motion.div
@@ -1173,7 +1165,7 @@ export default function App() {
                 onClick={scrollToForm}
                 className="samurai-button px-12 cursor-pointer"
               >
-                APLIQUE AGORA PARA A SESSÃO ESTRATÉGICA GRATUITA
+                APLICAR AGORA
               </button>
             </div>
           </div>
@@ -1196,7 +1188,7 @@ export default function App() {
               viewport={{ once: true }}
               className="flex flex-col items-center justify-center max-w-3xl mx-auto text-center mb-16"
             >
-              <span className="text-brand-red font-display text-sm uppercase tracking-[0.3em] mb-4 block">
+              <span className="text-brand-red font-sans font-bold text-xs uppercase tracking-widest mb-4 block">
                 Por que o UX Samurai?
               </span>
               <h2
@@ -1205,7 +1197,7 @@ export default function App() {
               >
                 RESULTADOS REAIS DE QUEM BUSCOU O TOPO
               </h2>
-              <p className="text-black/60 text-lg max-w-2xl mx-auto">
+              <p className="text-neutral-600 text-lg max-w-2xl mx-auto">
                 Já ajudamos centenas de designers a desenharem, lançarem e
                 escalarem suas carreiras globais. Ouça quem já transformou sua
                 trajetória com a nossa metodologia.
@@ -1231,127 +1223,142 @@ export default function App() {
                 onClick={scrollToForm}
                 className="samurai-button px-12 cursor-pointer"
               >
-                QUERO FAZER PARTE DESSE GRUPO ELITE
+                APLICAR AGORA
               </button>
             </div>
           </div>
         </section>
 
-        {/* FAQ Section */}
+        {/* FAQ Section High-End */}
         <section
-          className="py-32 px-6 bg-brand-ink text-white relative overflow-hidden"
+          className="py-24 md:py-32 px-6 bg-brand-ink text-white relative overflow-hidden"
           aria-labelledby="faq-title"
         >
           <div className="absolute inset-0 samurai-grid-pattern opacity-[0.03] pointer-events-none" />
 
-          <div className="max-w-4xl mx-auto relative z-10">
-            <motion.div {...fadeInUp} className="text-center mb-16">
-              <span className="text-brand-red font-display text-sm uppercase tracking-[0.3em] mb-4 block">
-                AS PERGUNTAS QUE TODO MUNDO TEM ANTES DE APLICAR
-              </span>
-              <h2
-                id="faq-title"
-                className="text-4xl md:text-5xl mb-6 font-display"
-              >
-                Perguntas Frequentes
-              </h2>
-              <p className="text-white/50">
-                Se sua dúvida não está aqui, mande um e-mail para{" "}
-                <span className="text-brand-red">contato@uxsamurai.com.br</span>
-              </p>
-            </motion.div>
-
-            <div className="space-y-4">
-              {[
-                {
-                  q: "Quanto tempo leva para ver resultados?",
-                  a: "Os resultados variam conforme sua dedicação, mas a maioria dos mentorados relata mudanças significativas no posicionamento e nas abordagens de projeto já nas primeiras 4 semanas.",
-                },
-                {
-                  q: "Preciso ter experiência em UX?",
-                  a: "Sim, esta mentoria é focada em profissionais que já atuam na área (Plenos e Sêniores) e buscam escalar para cargos de liderança ou mercado internacional.",
-                },
-                {
-                  q: "Posso fazer se não tenho portfolio pronto?",
-                  a: "Com certeza. Parte da mentoria foca justamente em como estruturar seus cases para que eles vendam sua senioridade, mesmo que você esteja começando a refinar seu portfólio agora.",
-                },
-                {
-                  q: "O que acontece se eu não conseguir dedicar 6-8h/semana?",
-                  a: "O cronograma é intenso para garantir resultados. Se você não puder dedicar esse tempo agora, recomendamos aguardar um momento mais oportuno para aproveitar 100% do investimento.",
-                },
-                {
-                  q: "Como funciona o acesso aos 6 AI Agents após a mentoria?",
-                  a: "Você terá acesso vitalício às ferramentas exclusivas desenvolvidas para otimizar seu workflow de design, pesquisa e estratégia.",
-                },
-                {
-                  q: "Qual é a taxa de sucesso? O que posso esperar realmente?",
-                  a: "Nossa taxa de sucesso em transições de carreira e aumentos salariais é superior a 85% para quem segue o Roadmap de Autoridade à risca.",
-                },
-                {
-                  q: "Por que R$ 4.500? Não é caro?",
-                  a: "O valor reflete o acesso direto a 30 anos de experiência global. É um investimento que se paga em poucos meses com o primeiro salto salarial ou contrato internacional.",
-                },
-                {
-                  q: "Posso parcelar?",
-                  a: "Sim, oferecemos opções de parcelamento via cartão de crédito para facilitar seu acesso à transformação.",
-                },
-                {
-                  q: "E se eu aplicar e não for selecionado?",
-                  a: "Nossa seleção é rigorosa para garantir a qualidade do grupo. Se não for selecionado agora, você receberá um feedback sobre o que precisa desenvolver para uma aplicação futura.",
-                },
-                {
-                  q: "Isso realmente funciona? Como sei que não é mais um curso de marketing?",
-                  a: "Isto não é um curso gravado. É uma mentoria estratégica com acompanhamento real, focada em resultados de negócio e carreira, não apenas em teoria de design.",
-                },
-              ].map((item, idx) => (
-                <motion.div
-                  key={idx}
-                  {...fadeInUp}
-                  className="border border-white/10 rounded-xl overflow-hidden bg-white/5"
-                >
-                  <button
-                    onClick={() => toggleFaq(idx)}
-                    className="w-full p-6 flex justify-between items-center text-left hover:bg-white/5 transition-colors duration-200 focus-ring cursor-pointer"
-                    aria-expanded={openFaqIndex === idx}
+          <div className="max-w-7xl mx-auto relative z-10">
+            <div className="grid lg:grid-cols-12 gap-12 lg:gap-24 items-start">
+              {/* Sticky Left Column */}
+              <div className="lg:col-span-4 lg:sticky lg:top-32">
+                <motion.div {...fadeInUp}>
+                  <span className="text-brand-red font-sans font-bold text-xs uppercase tracking-widest mb-4 block">
+                    O que você precisa saber
+                  </span>
+                  <h2
+                    id="faq-title"
+                    className="text-4xl md:text-5xl lg:text-5xl mb-6 font-display leading-tight"
                   >
-                    <span className="font-bold text-lg pr-8">{item.q}</span>
-                    <ChevronDown
-                      className={`text-brand-red transition-transform duration-300 ${openFaqIndex === idx ? "rotate-180" : ""}`}
-                      size={20}
-                    />
-                  </button>
-
-                  <motion.div
-                    initial={false}
-                    animate={{
-                      height: openFaqIndex === idx ? "auto" : 0,
-                      opacity: openFaqIndex === idx ? 1 : 0,
-                    }}
-                    className="overflow-hidden"
-                  >
-                    <div className="p-6 pt-0 text-white/60 leading-relaxed border-t border-white/5">
-                      {item.a}
+                    Perguntas Frequentes
+                  </h2>
+                  <p className="text-white/50 text-base mb-8 leading-relaxed max-w-sm">
+                    Transparência total. Se a sua dúvida não estiver respondida abaixo, entre em contato diretamente com a equipe.
+                  </p>
+                  
+                  <div className="flex items-center gap-4 p-5 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">
+                    <div className="w-12 h-12 rounded-full bg-brand-red/20 flex items-center justify-center text-brand-red shrink-0">
+                      <Mail size={18} />
                     </div>
-                  </motion.div>
+                    <div>
+                      <p className="text-xs text-white/50 uppercase tracking-widest font-bold mb-1">Contato Direto</p>
+                      <a href="mailto:contato@uxsamurai.com.br" className="text-white hover:text-brand-red transition-colors text-sm">
+                        contato@uxsamurai.com.br
+                      </a>
+                    </div>
+                  </div>
                 </motion.div>
-              ))}
-            </div>
+              </div>
 
-            <motion.div
-              {...fadeInUp}
-              className="mt-20 p-8 rounded-2xl border border-white/10 bg-white/5 text-center"
-            >
-              <h4 className="text-xl font-bold mb-4">
-                Ainda tem dúvidas? Não aplique ainda.
-              </h4>
-              <p className="text-white/60 max-w-2xl mx-auto text-sm leading-relaxed">
-                Só aplique quando estiver 80% convencido. A conversa de 20min
-                serve para os outros 20%.
-                <br />
-                Se você está em 50-50, leia a página de novo ou mande suas
-                perguntas por e-mail.
-              </p>
-            </motion.div>
+              {/* Scrollable Right Column */}
+              <div className="lg:col-span-8">
+                <div className="border-t border-white/10 mt-8 lg:mt-0">
+                  {[
+                    {
+                      q: "Quanto tempo leva para ver resultados?",
+                      a: "Os resultados variam conforme sua dedicação, mas a maioria dos mentorados relata mudanças significativas no posicionamento e nas abordagens de projeto já nas primeiras 4 semanas.",
+                    },
+                    {
+                      q: "Preciso ter experiência em UX?",
+                      a: "Sim, esta mentoria é focada em profissionais que já atuam na área (Plenos e Sêniores) e buscam escalar para cargos de liderança ou mercado internacional.",
+                    },
+                    {
+                      q: "Posso fazer se não tenho portfolio pronto?",
+                      a: "Com certeza. Parte da mentoria foca justamente em como estruturar seus cases para que eles vendam sua senioridade, mesmo que você esteja começando a refinar seu portfólio agora.",
+                    },
+                    {
+                      q: "O que acontece se eu não conseguir dedicar 6-8h/semana?",
+                      a: "O cronograma é intenso para garantir resultados. Se você não puder dedicar esse tempo agora, recomendamos aguardar um momento mais oportuno para aproveitar 100% do investimento.",
+                    },
+                    {
+                      q: "Como funciona o acesso aos 6 AI Agents após a mentoria?",
+                      a: "Você terá acesso vitalício às ferramentas exclusivas desenvolvidas para otimizar seu workflow de design, pesquisa e estratégia.",
+                    },
+                    {
+                      q: "Qual é a taxa de sucesso? O que posso esperar realmente?",
+                      a: "Nossa taxa de sucesso em transições de carreira e aumentos salariais é superior a 85% para quem segue o Roadmap de Autoridade à risca.",
+                    },
+                    {
+                      q: "Por que R$ 4.500? Não é caro?",
+                      a: "O valor reflete o acesso direto a 30 anos de experiência global. É um investimento que se paga em poucos meses com o primeiro salto salarial ou contrato internacional.",
+                    },
+                    {
+                      q: "Posso parcelar?",
+                      a: "Sim, oferecemos opções de parcelamento via cartão de crédito para facilitar seu acesso à transformação.",
+                    },
+                    {
+                      q: "E se eu aplicar e não for selecionado?",
+                      a: "Nossa seleção é rigorosa para garantir a qualidade do grupo. Se não for selecionado agora, você receberá um feedback sobre o que precisa desenvolver para uma aplicação futura.",
+                    },
+                    {
+                      q: "Isso realmente funciona? Como sei que não é mais um curso de marketing?",
+                      a: "Isto não é um curso gravado. É uma mentoria estratégica com acompanhamento real, focada em resultados de negócio e carreira, não apenas em teoria de design.",
+                    },
+                  ].map((item, idx) => (
+                    <motion.div
+                      key={idx}
+                      {...fadeInUp}
+                      className="border-b border-white/10"
+                    >
+                      <button
+                        onClick={() => toggleFaq(idx)}
+                        className="w-full py-8 flex items-start gap-4 md:gap-6 text-left hover:bg-white/[0.02] transition-colors duration-300 focus:outline-none cursor-pointer group"
+                        aria-expanded={openFaqIndex === idx}
+                      >
+                        <span className="text-brand-red font-display text-sm md:text-base tracking-widest opacity-80 mt-0.5 md:mt-1 w-6 md:w-8 shrink-0">
+                          {(idx + 1).toString().padStart(2, '0')}
+                        </span>
+                        
+                        <div className="flex-1 pr-4">
+                          <span className={`font-sans font-medium text-lg md:text-xl transition-colors duration-300 ${openFaqIndex === idx ? "text-white" : "text-white/70 group-hover:text-white"}`}>
+                            {item.q}
+                          </span>
+                        </div>
+
+                        <div className="mt-1 text-white/30 group-hover:text-white/60 transition-colors duration-300 shrink-0">
+                          {openFaqIndex === idx ? (
+                            <Minus size={20} className="text-brand-red" />
+                          ) : (
+                            <Plus size={20} />
+                          )}
+                        </div>
+                      </button>
+
+                      <motion.div
+                        initial={false}
+                        animate={{
+                          height: openFaqIndex === idx ? "auto" : 0,
+                          opacity: openFaqIndex === idx ? 1 : 0,
+                        }}
+                        className="overflow-hidden"
+                      >
+                        <div className="pb-8 pt-0 pl-10 md:pl-14 pr-6 text-white/50 leading-relaxed text-sm md:text-base font-sans">
+                          {item.a}
+                        </div>
+                      </motion.div>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -1364,7 +1371,7 @@ export default function App() {
 
           <div className="max-w-3xl mx-auto relative z-10">
             <motion.div {...fadeInUp} className="text-center mb-12">
-              <span className="text-brand-red font-display text-sm uppercase tracking-[0.3em] mb-4 block">
+              <span className="text-brand-red font-sans font-bold text-xs uppercase tracking-widest mb-4 block">
                 A HORA É AGORA
               </span>
               <h2 className="text-3xl md:text-5xl mb-6 uppercase leading-tight">
@@ -1372,7 +1379,7 @@ export default function App() {
                 <br />
                 <span className="text-brand-red">Seja a oportunidade.</span>
               </h2>
-              <p className="text-black/50 text-lg max-w-xl mx-auto">
+              <p className="text-neutral-500 text-lg max-w-xl mx-auto">
                 Uma aplicação. Uma conversa. Uma virada.
                 <br />
                 Preencha abaixo. Resposta em até 24h.
@@ -1400,82 +1407,100 @@ export default function App() {
                   <h3 className="text-2xl font-bold mb-3">
                     Aplicação enviada.
                   </h3>
-                  <p className="text-black/60">
-                    Você vai receber nosso contato em até 24h. Enquanto isso,
-                    prepare-se.
+                  <p className="text-neutral-600">
+                    Você vai receber nosso contato em até 24h. Enquanto isso, prepare-se.
                   </p>
                 </motion.div>
               ) : (
                 <>
                   <div className="grid md:grid-cols-2 gap-6">
                     <div>
-                      <label htmlFor="name" className="label-float">
+                      <label htmlFor="name" className="label-float label-float-kinetic">
                         Nome Completo
                       </label>
                       <input
                         id="name"
                         type="text"
-                        className="input-field focus-ring"
+                        className="input-field input-field-kinetic focus:outline-none focus:border-brand-red focus:ring-1 focus:ring-brand-red/50"
                         placeholder="Seu nome completo"
                         required
                       />
                     </div>
                     <div>
-                      <label htmlFor="email" className="label-float">
+                      <label htmlFor="email" className="label-float label-float-kinetic">
                         E-mail
                       </label>
                       <input
                         id="email"
                         type="email"
-                        className="input-field focus-ring"
+                        className="input-field input-field-kinetic focus:outline-none focus:border-brand-red focus:ring-1 focus:ring-brand-red/50"
                         placeholder="seu@email.com"
                         required
                       />
                     </div>
                   </div>
 
-                  <div>
-                    <label htmlFor="linkedin" className="label-float">
-                      Perfil no LinkedIn
-                    </label>
-                    <input
-                      id="linkedin"
-                      type="url"
-                      className="input-field focus-ring"
-                      placeholder="linkedin.com/in/seu-perfil"
-                      required
-                    />
-                  </div>
-
                   <div className="grid md:grid-cols-2 gap-6">
                     <div>
-                      <label htmlFor="role" className="label-float">
-                        Nível atual
+                      <label htmlFor="whatsapp" className="label-float label-float-kinetic">
+                        WhatsApp (com DDD)
                       </label>
-                      <select
-                        id="role"
-                        className="input-field appearance-none focus-ring cursor-pointer"
-                      >
-                        <option>Selecione</option>
-                        <option>Pleno (focado em Sênior)</option>
-                        <option>Sênior (focado em Lead/Staff)</option>
-                        <option>Lead / Manager</option>
-                      </select>
+                      <input
+                        id="whatsapp"
+                        type="tel"
+                        className="input-field input-field-kinetic focus:outline-none focus:border-brand-red focus:ring-1 focus:ring-brand-red/50"
+                        placeholder="(00) 00000-0000"
+                        required
+                      />
                     </div>
                     <div>
-                      <label htmlFor="career-state" className="label-float">
-                        Maior desafio
+                      <label htmlFor="linkedin" className="label-float label-float-kinetic">
+                        Perfil no LinkedIn
                       </label>
-                      <select
-                        id="career-state"
-                        className="input-field appearance-none focus-ring cursor-pointer"
-                      >
-                        <option>Selecione</option>
-                        <option>Teto salarial</option>
-                        <option>Transição internacional</option>
-                        <option>Insegurança com layoffs</option>
-                        <option>Migrar para gestão</option>
-                      </select>
+                      <input
+                        id="linkedin"
+                        type="url"
+                        className="input-field input-field-kinetic focus:outline-none focus:border-brand-red focus:ring-1 focus:ring-brand-red/50"
+                        placeholder="linkedin.com/in/seu-perfil"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-4 pt-2">
+                    <label className="label-float block mb-3">Nível atual (Selecione)</label>
+                    <div className="grid md:grid-cols-3 gap-3">
+                      {['Pleno', 'Sênior', 'Lead / Gestão'].map(level => (
+                        <button
+                          key={level}
+                          type="button"
+                          onClick={() => setSelectedLevel(level)}
+                          className={`py-3 px-4 border rounded-xl text-sm font-medium transition-all duration-200 ${selectedLevel === level ? "border-brand-red bg-brand-red/5 text-brand-red" : "border-black/5 bg-black/[0.02] text-neutral-600 hover:bg-black/[0.04]"}`}
+                        >
+                          {level}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-4 pt-4">
+                    <label className="label-float block mb-3">Maior Desafio Atual</label>
+                    <div className="grid md:grid-cols-2 gap-3">
+                      {[
+                        'Quebrar Teto Salarial',
+                        'Transição Internacional',
+                        'Insegurança com Layoffs',
+                        'Transição para Diretoria'
+                      ].map(challenge => (
+                        <button
+                          key={challenge}
+                          type="button"
+                          onClick={() => setSelectedChallenge(challenge)}
+                          className={`py-3 px-4 border rounded-xl text-sm font-medium transition-all duration-200 text-left ${selectedChallenge === challenge ? "border-brand-red bg-brand-red/5 text-brand-red" : "border-black/5 bg-black/[0.02] text-neutral-600 hover:bg-black/[0.04]"}`}
+                        >
+                          {challenge}
+                        </button>
+                      ))}
                     </div>
                   </div>
 
@@ -1490,33 +1515,19 @@ export default function App() {
                           className="animate-spin h-5 w-5"
                           viewBox="0 0 24 24"
                         >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                            fill="none"
-                          />
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                          />
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                         </svg>
                         ENVIANDO...
                       </span>
                     ) : (
-                      "QUERO MINHA VAGA"
+                      "ENVIAR APLICAÇÃO"
                     )}
                   </button>
 
                   <div className="flex items-center justify-center gap-2 text-xs text-black/40 mt-2">
                     <Lock size={12} />
-                    <span>
-                      Dados 100% seguros · Vagas limitadas · Resposta em até 24h
-                    </span>
+                    <span>Dados 100% seguros · Vagas limitadas · Resposta em até 24h</span>
                   </div>
                 </>
               )}
