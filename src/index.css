@@ -1,10 +1,17 @@
-﻿@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Yuji+Syuku&display=swap');
+﻿/**
+ * Base Application Styles
+ * 
+ * Integrates Tailwind CSS directives and defines the core design system variables.
+ * Includes global typography settings, utility classes for UI components, 
+ * glassmorphism effects, and custom scroll/selection behaviors.
+ */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Yuji+Syuku&display=swap");
 @import "tailwindcss";
 
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Yuji Syuku", serif;
-  
+
   --color-brand-red: #ff3b30;
   --color-brand-cream: #f5f2ed;
   --color-brand-ink: #1a1a1a;
@@ -14,14 +21,18 @@
   body {
     @apply bg-brand-cream text-brand-ink font-sans antialiased overflow-x-hidden;
   }
-  
-  h1, h2, h3 {
+
+  h1,
+  h2,
+  h3 {
     @apply font-display tracking-normal;
   }
 
   /* Respect reduced motion preference */
   @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after {
+    *,
+    *::before,
+    *::after {
       animation-duration: 0.01ms !important;
       animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
@@ -115,4 +126,124 @@ html {
   box-shadow:
     0 4px 30px rgba(0, 0, 0, 0.25),
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* === HERO SECTION === */
+.hero-section {
+  min-height: 100vh;
+  min-height: 100dvh;
+  /* CSS background  mountain in bottom third */
+  background-image: url("/images/hero-mountain-bg.png");
+  background-size: cover;
+  background-position: bottom center;
+  background-repeat: no-repeat;
+  position: relative;
+}
+
+/* Subtle radial overlay for headline readability */
+.hero-section::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 60% 50% at 50% 38%,
+    rgba(245, 242, 237, 0.75) 0%,
+    rgba(245, 242, 237, 0.4) 50%,
+    transparent 100%
+  );
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Bottom fade for seamless section transition */
+.hero-section::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 120px;
+  background: linear-gradient(
+    to top,
+    var(--color-brand-cream) 0%,
+    transparent 100%
+  );
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Keep mountain visible on mobile */
+@media (max-width: 768px) {
+  .hero-section {
+    background-position: 50% 85%;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-section {
+    background-position: 50% 80%;
+  }
+}
+
+/* === SOCIAL PROOF (below CTA) === */
+.hero-social-proof {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-top: 2.5rem;
+}
+
+.avatar-stack {
+  display: flex;
+}
+
+.avatar-stack img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  margin-left: -10px;
+  object-fit: cover;
+  transition: transform 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.avatar-stack img:first-child {
+  margin-left: 0;
+}
+
+.avatar-stack img:hover {
+  transform: scale(1.12);
+  z-index: 2;
+}
+
+.social-proof-stars {
+  display: flex;
+  gap: 2px;
+  color: #c9a96e;
+}
+
+.social-proof-text {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(26, 26, 26, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+}
+
+@media (max-width: 768px) {
+  .avatar-stack img {
+    width: 32px;
+    height: 32px;
+    margin-left: -8px;
+  }
+
+  .hero-social-proof {
+    margin-top: 2rem;
+  }
+
+  .social-proof-text {
+    font-size: 0.65rem;
+  }
 }

@@ -1,0 +1,42 @@
+{
+    "meta": {
+        "brand_name": "Airbnb",
+        "description": "Core design tokens for UI implementation."
+    },
+    "colors": {
+        "primary": {
+            "DEFAULT": "#EAF3FD",
+            "hover": "#224CA4",
+            "foreground": "#222222"
+        },
+        "secondary": {
+            "DEFAULT": "#224CA4",
+            "foreground": "#FFFFFF"
+        },
+        "background": "#FFFFFF",
+        "foreground": "#222222",
+        "muted": "#F4F4F5",
+        "accent": "#224CA4",
+        "destructive": "#EF4444",
+        "success": "#10B981"
+    },
+    "typography": {
+        "font_family_headings": [
+            "Circular",
+            "sans-serif"
+        ],
+        "font_family_body": [
+            "Airbnb Cereal VF",
+            "Roboto",
+            "Helvetica Neue",
+            "sans-serif"
+        ],
+        "font_weight_bold": "700",
+        "font_weight_normal": "400"
+    },
+    "ui": {
+        "border_radius_default": "16px",
+        "border_radius_small": "4px",
+        "spacing_base_unit": "4px"
+    }
+}
